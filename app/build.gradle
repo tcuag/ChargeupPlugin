@@ -3,8 +3,8 @@ apply plugin: 'com.android.library'
 ext {
     PUBLISH_GROUP_ID = 'de.fernsehfee'
     PUBLISH_ARTIFACT_ID = 'chargeupplugin'
-    PUBLISH_VERSION = '2.0.0'
-    VERSION_CODE = 4
+    PUBLISH_VERSION = '2.0.2'
+    VERSION_CODE = 6
 }
 
 android {

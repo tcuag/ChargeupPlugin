@@ -1,11 +1,10 @@
 package de.telecontrol.chargeup.plugin;
 
 public class Constants {
-	public static final String PLUGIN_PACKAGE_NAME = "com.welovetv.welovetv";
-	public static final String PLUGIN_INTENT_FILTER = "com.welovetv.plugin.MAIN";
+	public static final String PLUGIN_PACKAGE_NAME = "";
+	public static final String PLUGIN_INTENT_FILTER = "";
 
-	public static final String PLUGIN_INTENT_COMMAND = "intent-command";
-	public static final String PLUGIN_INTENT_CALLBACK = "intent-callback";
+	public static final String PLUGIN_COMMAND = "command";
 	public static final String PLUGIN_INTENT_LAUNCH_TARGET = "target";
 
 	public static final String PLUGIN_PAYMENT_OPTIONS = "payment-options";

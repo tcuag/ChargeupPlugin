@@ -1,9 +1,11 @@
 package de.telecontrol.chargeup.plugin;
 
-import android.app.IntentService;
-import android.content.Intent;
+import android.content.ContentProvider;
+import android.content.ContentValues;
+import android.database.Cursor;
+import android.database.MatrixCursor;
 import android.net.Uri;
-import android.os.Bundle;
+import android.util.Pair;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -12,14 +14,9 @@ import org.json.JSONObject;
 import java.util.List;
 
 import androidx.annotation.NonNull;
-import androidx.core.util.Pair;
 
-public abstract class PaymentService extends IntentService {
+public abstract class PaymentProvider extends ContentProvider {
 	public static final int API_VERSION = 3;
-
-	public PaymentService() {
-		super("PaymentService");
-	}
 
 	/**
 	 * A list of options for payment. Options include the payment index (in multiples of 5 Euros),
@@ -59,12 +56,18 @@ public abstract class PaymentService extends IntentService {
 	public abstract Pair<Boolean, String> isPaymentAllowed();
 
 	@Override
-	protected void onHandleIntent(Intent intent) {
-		final String command = intent.getStringExtra(Constants.PLUGIN_COMMAND);
-//		final ResultReceiver callback = intent.getParcelableExtra(Constants.PLUGIN_INTENT_CALLBACK);
+	public boolean onCreate() {
+		return true;
+	}
+
+	@Override
+	public Cursor query(@NonNull Uri uri, String[] projection, String selection, String[] args, String sort) {
+		final String command = selection;
 
 		if(Constants.PLUGIN_PAYMENT_OPTIONS.equals(command)) {
-			Bundle bundle = new Bundle();
+			MatrixCursor cursor = new MatrixCursor(new String[] {
+					Constants.PLUGIN_RESPONSE, Constants.PLUGIN_PAYMENT_OPTIONS, Constants.PLUGIN_PAYMENT_URL, Constants.PLUGIN_PAYMENT_USER
+			});
 
 			JSONObject root = new JSONObject();
 			try {
@@ -82,30 +85,63 @@ public abstract class PaymentService extends IntentService {
 				e.printStackTrace();
 			}
 
-			bundle.putString(Constants.PLUGIN_RESPONSE, Constants.PLUGIN_OK);
-			bundle.putString(Constants.PLUGIN_PAYMENT_OPTIONS, root.toString());
+			cursor.addRow(new Object[] {
+					Constants.PLUGIN_OK, root.toString(), getPaymentUrl(), getUserId()
+			});
 
-//			callback.send(1, bundle);
+			return cursor;
 		} else if(Constants.PLUGIN_PAYMENT_ALLOWED.equals(command)) {
 			Pair<Boolean, String> allowed = isPaymentAllowed();
 
-			Bundle bundle = new Bundle();
-			bundle.putString(Constants.PLUGIN_RESPONSE, Constants.PLUGIN_OK);
-			bundle.putBoolean(Constants.PLUGIN_PAYMENT_ALLOWED_BOOLEAN, allowed.first);
-			bundle.putString(Constants.PLUGIN_PAYMENT_ALLOWED_MESSAGE, allowed.second);
-//			callback.send(1, bundle);
-		} else if(Constants.PLUGIN_VERSION.equals(command)) {
-			Bundle bundle = new Bundle();
-			bundle.putString(Constants.PLUGIN_RESPONSE, Constants.PLUGIN_OK);
-			bundle.putInt(Constants.PLUGIN_VERSION, API_VERSION);
-//			callback.send(1, bundle);
-		} else {
-			Bundle bundle = new Bundle();
-			bundle.putString(Constants.PLUGIN_RESPONSE, Constants.PLUGIN_UNSUPPORTED);
-			bundle.putString(Constants.PLUGIN_COMMAND, command);
-//			callback.send(1, bundle);
-		}
+			MatrixCursor cursor = new MatrixCursor(new String[] {
+					Constants.PLUGIN_RESPONSE, Constants.PLUGIN_PAYMENT_ALLOWED_BOOLEAN, Constants.PLUGIN_PAYMENT_ALLOWED_MESSAGE
+			});
 
-		this.stopSelf();
+			cursor.addRow(new Object[] {
+					Constants.PLUGIN_OK, allowed.first ? 1 : 0, allowed.second
+			});
+
+			return cursor;
+		} else if(Constants.PLUGIN_VERSION.equals(command)) {
+			MatrixCursor cursor = new MatrixCursor(new String[] {
+					Constants.PLUGIN_RESPONSE, Constants.PLUGIN_VERSION
+			});
+
+			cursor.addRow(new Object[] {
+					Constants.PLUGIN_OK, API_VERSION
+			});
+
+			return cursor;
+		} else {
+			MatrixCursor cursor = new MatrixCursor(new String[] {
+					Constants.PLUGIN_RESPONSE, Constants.PLUGIN_COMMAND
+			});
+
+			cursor.addRow(new Object[] {
+					Constants.PLUGIN_UNSUPPORTED, command
+			});
+
+			return cursor;
+		}
+	}
+
+	@Override
+	public String getType(Uri uri) {
+		return "payment-option";
+	}
+
+	@Override
+	public Uri insert(Uri uri, ContentValues contentValues) {
+		throw new RuntimeException("Insert is not implemented");
+	}
+
+	@Override
+	public int delete(Uri uri, String s, String[] strings) {
+		throw new RuntimeException("Insert is not implemented");
+	}
+
+	@Override
+	public int update(Uri uri, ContentValues contentValues, String s, String[] strings) {
+		throw new RuntimeException("Insert is not implemented");
 	}
 }
